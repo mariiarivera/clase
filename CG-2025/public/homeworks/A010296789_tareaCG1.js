@@ -1,10 +1,10 @@
 /*
- * Two objects:
- * 1) Pivot star (pink), independent VAO
- * 2) Yellow face, independent VAO
- * GUI:
- *  - Move pivot
- *  - Move/rotate/scale face around pivot
+ * Maria Rivera A01029678
+ * Carita amarilla con pivote rosa
+ * Tarea 1 CG
+ * cara que rota, escala y se traslada 
+ * la rotacion es alrededor de un pivote
+ * usando TWGL
  */
 
 'use strict';
@@ -13,7 +13,7 @@ import * as twgl from 'twgl-base.js';
 import { M3 } from '../../libs/2d-lib.js';
 import GUI from 'lil-gui';
 
-// ---------------- SHADERS ----------------
+// color
 
 const vsGLSL = `#version 300 es
 in vec2 a_position;
@@ -45,7 +45,7 @@ void main() {
 }
 `;
 
-// -------- GLOBAL UI OBJECT --------
+// objetos
 
 const objects = {
     pivot: {
@@ -59,7 +59,7 @@ const objects = {
     },
 };
 
-// -------- SHAPE: STAR PIVOT (PINK) --------
+// pivot un pentagono rosa
 
 function generatePivotStar(xc, yc, radius = 40) {
     const pos = [];
@@ -71,7 +71,6 @@ function generatePivotStar(xc, yc, radius = 40) {
     const step = (Math.PI * 2) / spikes;
 
     for (let i = 0; i < spikes; i++) {
-        // triángulo entre centro y dos puntos consecutivos
         let x1 = xc + Math.cos(angle) * radius;
         let y1 = yc + Math.sin(angle) * radius;
 
@@ -82,7 +81,7 @@ function generatePivotStar(xc, yc, radius = 40) {
 
         pos.push(xc, yc, x1, y1, x2, y2);
 
-        for (let k = 0; k < 3; k++) col.push(1, 0.4, 0.7, 1); // rosa
+        for (let k = 0; k < 3; k++) col.push(1, 0.4, 0.7, 1); 
 
         indices.push(base, base + 1, base + 2);
 
@@ -96,7 +95,7 @@ function generatePivotStar(xc, yc, radius = 40) {
     };
 }
 
-// -------- SHAPE: YELLOW FACE --------
+// cara amarillo con ojos y boca
 
 function generateFace(cx, cy, size) {
 
@@ -119,7 +118,7 @@ function generateFace(cx, cy, size) {
         ind.push(base, base + 1, base + 2, base, base + 2, base + 3);
     }
 
-    // Square
+    // cuadrado
     addQuad(
         [cx - half, cy - half],
         [cx + half, cy - half],
@@ -128,7 +127,7 @@ function generateFace(cx, cy, size) {
         [1, 1, 0.4, 1]
     );
 
-    // Eyes
+    // ojos
     const eyeSize = size * 0.12;
     const eyeY = cy - half * 0.55;
     const eyeOffsetX = size * 0.25;
@@ -146,7 +145,7 @@ function generateFace(cx, cy, size) {
     addDiamond(cx - eyeOffsetX, eyeY, eyeSize);
     addDiamond(cx + eyeOffsetX, eyeY, eyeSize);
 
-    // Mouth line
+    // boca
     const mouthWidth = size * 0.5;
     const mouthY = cy + size * 0.10;
     addQuad(
@@ -157,7 +156,7 @@ function generateFace(cx, cy, size) {
         [0, 0, 0, 1]
     );
 
-    // Teeth
+    // dientes
     const toothSize = size * 0.12;
     const toothGap = 5;
     const toothY = mouthY + toothSize * 0.9;
@@ -179,7 +178,7 @@ function generateFace(cx, cy, size) {
     return arrays;
 }
 
-// ---------------- MAIN ----------------
+
 
 function main() {
     const canvas = document.querySelector('canvas');
@@ -192,12 +191,12 @@ function main() {
 
     const programInfo = twgl.createProgramInfo(gl, [vsGLSL, fsGLSL]);
 
-    // --- CREATE STAR VAO ---
+    // crear estrella pivote
     const starArrays = generatePivotStar(0, 0, 40);
     const starBuffer = twgl.createBufferInfoFromArrays(gl, starArrays);
     const starVAO = twgl.createVAOFromBufferInfo(gl, programInfo, starBuffer);
 
-    // --- CREATE FACE VAO ---
+    // crear cara
     const faceArrays = generateFace(0, 0, 180);
     const faceBuffer = twgl.createBufferInfoFromArrays(gl, faceArrays);
     const faceVAO = twgl.createVAOFromBufferInfo(gl, programInfo, faceBuffer);
@@ -213,9 +212,9 @@ function drawScene(gl, programInfo, starVAO, starBuffer, faceVAO, faceBuffer) {
     gl.useProgram(programInfo.program);
 
     // ========================
-    // 1. DRAW PIVOT STAR
+    // 1. DIBUJAR ESTRELLA (PIVOT)
     // ========================
-    let starTrans = M3.translation([
+    const starTrans = M3.translation([
         objects.pivot.x,
         objects.pivot.y
     ]);
@@ -230,32 +229,40 @@ function drawScene(gl, programInfo, starVAO, starBuffer, faceVAO, faceBuffer) {
 
 
     // ========================
-    // 2. DRAW FACE (ALWAYS ROTATE AROUND PIVOT)
+    // 2. DIBUJAR CARA (ROTANDO ALREDEDOR DEL PIVOT)
     // ========================
 
-    const tx = objects.face.translate.x;   
+    const tx = objects.face.translate.x;   // posición "deseada" de la cara
     const ty = objects.face.translate.y;
-    const angle = objects.face.rotate;     
-    const sx = objects.face.scale.x;
+    const angle = objects.face.rotate;     // ángulo de rotación
+    const sx = objects.face.scale.x;       // escala independiente
     const sy = objects.face.scale.y;
 
-    // Matrices
-    let T_face  = M3.translation([tx, ty]); 
-    let T_pivot = M3.translation([objects.pivot.x, objects.pivot.y]);
-    let T_back  = M3.translation([-objects.pivot.x, -objects.pivot.y]);
-    let R       = M3.rotation(angle);
-    let S       = M3.scale([sx, sy]);
+    const Px = objects.pivot.x;
+    const Py = objects.pivot.y;
 
-    // ORDEN CORRECTO FINAL
+    // Escala local de la cara
+    const S = M3.scale([sx, sy]);
+
+    // Traslación relativa: de P al punto donde quiero la cara cuando angle = 0
+    const Toffset = M3.translation([tx - Px, ty - Py]);
+
+    // Rotación
+    const R = M3.rotation(angle);
+
+    // Traslación final al pivote
+    const Tpiv = M3.translation([Px, Py]);
+
+    // Construcción de la matriz compuesta:
     //
-    //    T_face  →  T_pivot → R → T_back → S
+    //   transform = Tpiv * R * Toffset * S
     //
+    // (con el patrón multiply(new, current))
     let transform = M3.identity();
-    transform = M3.multiply(T_face, transform);      // mover toda la cara
-    transform = M3.multiply(T_pivot, transform);     // llevar al pivote
-    transform = M3.multiply(R, transform);           // rotar alrededor del pivote
-    transform = M3.multiply(T_back, transform);      // regresar
-    transform = M3.multiply(S, transform);           // escalar independiente
+    transform = M3.multiply(S, transform);        // 1) escala local
+    transform = M3.multiply(Toffset, transform);  // 2) desplazar cara relativo a P
+    transform = M3.multiply(R, transform);        // 3) rotar alrededor de P
+    transform = M3.multiply(Tpiv, transform);     // 4) llevar a la posición del pivote
 
     twgl.setUniforms(programInfo, {
         u_resolution: [gl.canvas.width, gl.canvas.height],
@@ -263,11 +270,12 @@ function drawScene(gl, programInfo, starVAO, starBuffer, faceVAO, faceBuffer) {
     });
 
     gl.bindVertexArray(faceVAO);
-    twgl.drawBufferInfo(gl, faceBuffer);
-
+    gl.drawElements(gl.TRIANGLES, faceBuffer.numElements, gl.UNSIGNED_SHORT, 0);
+    // o, si usas twgl con indices:
+    // twgl.drawBufferInfo(gl, faceBuffer);
 
     // LOOP
-    requestAnimationFrame(() => 
+    requestAnimationFrame(() =>
         drawScene(gl, programInfo, starVAO, starBuffer, faceVAO, faceBuffer)
     );
 }
@@ -275,12 +283,13 @@ function drawScene(gl, programInfo, starVAO, starBuffer, faceVAO, faceBuffer) {
 
 
 
-// ---------------- UI ----------------
+
+// ui
 
 function setupUI(gl) {
     const gui = new GUI();
 
-    const radius = 40; // mismo radio usado en generatePivotStar()
+    const radius = 40; 
 
     const pivotFolder = gui.addFolder("Pivot (Star)");
     pivotFolder.add(objects.pivot, "x", radius, gl.canvas.width - radius);
