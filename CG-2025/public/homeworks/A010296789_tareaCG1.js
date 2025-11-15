@@ -211,9 +211,7 @@ function drawScene(gl, programInfo, starVAO, starBuffer, faceVAO, faceBuffer) {
 
     gl.useProgram(programInfo.program);
 
-    // ========================
-    // 1. DIBUJAR ESTRELLA (PIVOT)
-    // ========================
+    // dibuja pivote (estrella rosa)
     const starTrans = M3.translation([
         objects.pivot.x,
         objects.pivot.y
@@ -228,41 +226,33 @@ function drawScene(gl, programInfo, starVAO, starBuffer, faceVAO, faceBuffer) {
     twgl.drawBufferInfo(gl, starBuffer);
 
 
-    // ========================
-    // 2. DIBUJAR CARA (ROTANDO ALREDEDOR DEL PIVOT)
-    // ========================
+    // dibuja cara, especial con transformaciones
 
-    const tx = objects.face.translate.x;   // posición "deseada" de la cara
-    const ty = objects.face.translate.y;
-    const angle = objects.face.rotate;     // ángulo de rotación
-    const sx = objects.face.scale.x;       // escala independiente
+    const faceX = objects.face.translate.x;   
+    const faceY = objects.face.translate.y;
+    const angle = objects.face.rotate;
+    const sx = objects.face.scale.x;
     const sy = objects.face.scale.y;
 
-    const Px = objects.pivot.x;
-    const Py = objects.pivot.y;
+    const pivotX = objects.pivot.x;
+    const pivotY = objects.pivot.y;
 
-    // Escala local de la cara
-    const S = M3.scale([sx, sy]);
+  
+    const offsetX = faceX - pivotX;
+    const offsetY = faceY - pivotY;
 
-    // Traslación relativa: de P al punto donde quiero la cara cuando angle = 0
-    const Toffset = M3.translation([tx - Px, ty - Py]);
+    // matrices básicas
+    const S      = M3.scale([sx, sy]);                 
+    const Toff   = M3.translation([offsetX, offsetY]); 
+    const R      = M3.rotation(angle);                 
+    const Tpivot = M3.translation([pivotX, pivotY]);   
 
-    // Rotación
-    const R = M3.rotation(angle);
-
-    // Traslación final al pivote
-    const Tpiv = M3.translation([Px, Py]);
-
-    // Construcción de la matriz compuesta:
-    //
-    //   transform = Tpiv * R * Toffset * S
-    //
-    // (con el patrón multiply(new, current))
+    
     let transform = M3.identity();
-    transform = M3.multiply(S, transform);        // 1) escala local
-    transform = M3.multiply(Toffset, transform);  // 2) desplazar cara relativo a P
-    transform = M3.multiply(R, transform);        // 3) rotar alrededor de P
-    transform = M3.multiply(Tpiv, transform);     // 4) llevar a la posición del pivote
+    transform = M3.multiply(S, transform);       
+    transform = M3.multiply(Toff, transform);    
+    transform = M3.multiply(R, transform);       
+    transform = M3.multiply(Tpivot, transform);  
 
     twgl.setUniforms(programInfo, {
         u_resolution: [gl.canvas.width, gl.canvas.height],
@@ -270,15 +260,14 @@ function drawScene(gl, programInfo, starVAO, starBuffer, faceVAO, faceBuffer) {
     });
 
     gl.bindVertexArray(faceVAO);
-    gl.drawElements(gl.TRIANGLES, faceBuffer.numElements, gl.UNSIGNED_SHORT, 0);
-    // o, si usas twgl con indices:
-    // twgl.drawBufferInfo(gl, faceBuffer);
+    twgl.drawBufferInfo(gl, faceBuffer);
 
-    // LOOP
+    // loop
     requestAnimationFrame(() =>
         drawScene(gl, programInfo, starVAO, starBuffer, faceVAO, faceBuffer)
     );
 }
+
 
 
 
